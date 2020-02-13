@@ -7,6 +7,10 @@ import { ERROR_TYPES } from '../types/evidences-status-types'
 export default function useEvidences(evidences) {
   const [evidenceProcessed, setEvidenceProcessed] = useState([])
 
+  const evidencesKey = evidences
+    ? evidences.map(evidence => evidence.data).join('')
+    : null
+
   useEffect(() => {
     let cancelled = false
     const appendEvidence = evidence => {
@@ -68,7 +72,7 @@ export default function useEvidences(evidences) {
     return () => {
       cancelled = true
     }
-  }, [evidences])
+  }, [evidencesKey]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return evidenceProcessed
 }
