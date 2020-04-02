@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import {
-  Bar,
   ButtonIcon,
   GU,
   Header,
@@ -9,28 +8,29 @@ import {
   Tabs,
   breakpoint,
   springs,
-  textStyle,
   useTheme,
   useViewport,
 } from '@aragon/ui'
 import { Transition, animated } from 'react-spring/renderprops'
 import { useEsc } from '../../hooks/useKeyboardArrows'
 import Network from './Network/Network'
+import ManageNotifications from './Notifications/ManageNotifications'
 
-const SECTIONS = new Map([['network', 'Network']])
+const SECTIONS = new Map([
+  ['network', 'Network'],
+  ['notifications', 'Email Notifications'],
+])
 const PATHS = Array.from(SECTIONS.keys())
 const VALUES = Array.from(SECTIONS.values())
 
 const NETWORK_INDEX = 0
+const NOTIFICATIONS_INDEX = 1
 
 const AnimatedDiv = animated.div
 
 function GlobalPreferences({ compact, onClose, onNavigation, sectionIndex }) {
-  const theme = useTheme()
-
+  console.log('sectionIndex ', sectionIndex)
   useEsc(onClose)
-
-  const tabItems = VALUES.filter((_, index) => index === NETWORK_INDEX)
 
   const container = useRef()
   useEffect(() => {
@@ -50,31 +50,15 @@ function GlobalPreferences({ compact, onClose, onNavigation, sectionIndex }) {
           `}
         />
         <React.Fragment>
-          {tabItems.length > 1 ? (
-            <Tabs
-              items={tabItems}
-              onChange={onNavigation}
-              selected={sectionIndex}
-            />
-          ) : (
-            <Bar>
-              <div
-                css={`
-                  display: flex;
-                  height: 100%;
-                  align-items: center;
-                  padding-left: ${compact ? 2 * GU : 3 * GU}px;
-                  color: ${compact
-                    ? theme.surfaceContent
-                    : theme.surfaceContentSecondary};
-                  ${textStyle('body2')}
-                `}
-              >
-                {tabItems[0]}
-              </div>
-            </Bar>
-          )}
-          <main>{sectionIndex === NETWORK_INDEX && <Network />}</main>
+          <Tabs
+            items={VALUES}
+            onChange={onNavigation}
+            selected={sectionIndex}
+          />
+          <main>
+            {sectionIndex === NETWORK_INDEX && <Network />}
+            {sectionIndex === NOTIFICATIONS_INDEX && <ManageNotifications />}
+          </main>
         </React.Fragment>
       </Layout>
     </div>
@@ -82,6 +66,7 @@ function GlobalPreferences({ compact, onClose, onNavigation, sectionIndex }) {
 }
 
 function useGlobalPreferences({ path = {}, onScreenChange }) {
+  console.log('path ', path)
   const [sectionIndex, setSectionIndex] = useState(null)
   const [subsection, setSubsection] = useState(null)
   const handleNavigation = useCallback(
@@ -98,9 +83,6 @@ function useGlobalPreferences({ path = {}, onScreenChange }) {
     }
     const index = PATHS.findIndex(item => path.startsWith(item))
 
-    if (index !== NETWORK_INDEX) {
-      return
-    }
     setSectionIndex(index === -1 ? null : index)
 
     // subsection is the part after the PATH, e.g. for `?p=/notifications/verify` - `/verify`

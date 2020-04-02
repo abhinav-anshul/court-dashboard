@@ -12,6 +12,7 @@ import {
 } from '@aragon/ui'
 
 import iconNetwork from '../../assets/global-preferences-network.svg'
+import iconNotifications from '../../assets/global-preferences-notifications.svg'
 
 function GlobalPreferencesButton({ onOpen }) {
   const theme = useTheme()
@@ -86,6 +87,11 @@ function GlobalPreferencesButton({ onOpen }) {
             onClick={handleItemClick('network')}
             icon={iconNetwork}
             label="Network"
+          />
+          <Item
+            onClick={handleItemClick('notifications')}
+            icon={iconNotifications}
+            label="Notifications"
           />
         </ul>
       </Popover>
