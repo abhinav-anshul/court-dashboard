@@ -6,7 +6,6 @@ import {
   IconClose,
   Layout,
   Tabs,
-  breakpoint,
   springs,
   useTheme,
   useViewport,
@@ -65,13 +64,11 @@ function GlobalPreferences({ compact, onClose, onNavigation, sectionIndex }) {
   )
 }
 
-function useGlobalPreferences({ path = {}, onScreenChange }) {
-  console.log('path ', path)
+function useGlobalPreferences({ path = '', onScreenChange }) {
   const [sectionIndex, setSectionIndex] = useState(null)
-  const [subsection, setSubsection] = useState(null)
   const handleNavigation = useCallback(
     index => {
-      onScreenChange(PATHS[index])
+      onScreenChange(PATHS[index]) // TODO - Test if this is working with the email preferences
     },
     [onScreenChange]
   )
@@ -84,15 +81,9 @@ function useGlobalPreferences({ path = {}, onScreenChange }) {
     const index = PATHS.findIndex(item => path.startsWith(item))
 
     setSectionIndex(index === -1 ? null : index)
-
-    // subsection is the part after the PATH, e.g. for `?p=/notifications/verify` - `/verify`
-    const subsection = index !== -1 ? path.substring(PATHS[index].length) : null
-
-    setSubsection(subsection)
-    // Does the current path start with any of the declared route paths
   }, [path, sectionIndex])
 
-  return { sectionIndex, subsection, handleNavigation }
+  return { sectionIndex, handleNavigation }
 }
 
 function Close({ compact, onClick }) {
@@ -123,10 +114,10 @@ function Close({ compact, onClick }) {
   )
 }
 
-function AnimatedGlobalPreferences(props) {
+function AnimatedGlobalPreferences({ path, onScreenChange, onClose }) {
   const { sectionIndex, handleNavigation } = useGlobalPreferences({
-    path: props.path,
-    onScreenChange: props.onScreenChange,
+    path,
+    onScreenChange,
   })
 
   const { below } = useViewport()
@@ -145,7 +136,7 @@ function AnimatedGlobalPreferences(props) {
       {show =>
         show &&
         /* eslint-disable react/prop-types */
-        // z-index 2 on mobile keeps the menu above this preferences modal
+        // z-index 1 on mobile keeps the menu above this preferences modal
         (({ opacity, enterProgress, blocking }) => (
           <AnimatedDiv
             style={{
@@ -166,15 +157,14 @@ function AnimatedGlobalPreferences(props) {
               left: 0;
               right: 0;
               overflow: auto;
-              min-width: 360px;
-              padding-bottom: ${2 * GU}px;
+              min-width: ${45 * GU}px;
+              padding-bottom: ${compact ? 2 : 0 * GU}px;
               border-top: 2px solid ${theme.accent};
               background: ${theme.surface};
-              ${breakpoint('medium', `padding-bottom:0;`)}
             `}
           >
             <GlobalPreferences
-              {...props}
+              onClose={onClose}
               compact={compact}
               sectionIndex={sectionIndex}
               onNavigation={handleNavigation}

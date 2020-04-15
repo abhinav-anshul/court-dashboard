@@ -1,9 +1,8 @@
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useState } from 'react'
 import styled from 'styled-components'
 import {
   Box,
   Button,
-  Info,
   GU,
   TextInput,
   textStyle,
@@ -11,14 +10,18 @@ import {
   useTheme,
 } from '@aragon/ui'
 import { defaultEthNode, defaultIpfsGateway } from '../../../networks'
-import { setDefaultEthNode, setIpfsGateway } from '../../../local-settings'
+import {
+  clearLocalStorageNetworkSettings,
+  setDefaultEthNode,
+  setIpfsGateway,
+} from '../../../local-settings'
 import { InvalidNetworkType, InvalidURI, NoConnection } from '../../../errors'
-import keycodes from '../../../keycodes'
 import {
   checkValidEthNode,
   getNetworkType,
   sanitizeNetworkType,
 } from '../../../lib/web3-utils'
+import { useEnterKey } from '../../../hooks/useKeyboardArrows'
 
 function Network() {
   const {
@@ -27,9 +30,9 @@ function Network() {
     ipfsGateway,
     handleEthNodeChange,
     handleIpfsGatewayChange,
-    handleClearCache,
     networkError,
     handleNetworkChange,
+    handleClearNetworkSettings,
   } = useNetwork()
   const theme = useTheme()
 
@@ -64,7 +67,7 @@ function Network() {
                   )}`
                 }
                 if (networkError instanceof InvalidURI) {
-                  return 'Must provide WebSocket endpoint to node'
+                  return 'Must provide Http endpoint to node'
                 }
                 if (networkError instanceof NoConnection) {
                   return 'Could not connect to node'
@@ -97,24 +100,18 @@ function Network() {
           `}
         >
           <span>
-            Press this button to refresh the cache of the application in your
-            browser.
+            Press this button to reset the network settings to their defaults.
           </span>
         </div>
         <Button
           css={`
             margin-bottom: ${2 * GU}px;
           `}
-          onClick={handleClearCache}
+          onClick={handleClearNetworkSettings}
           wide={compact}
         >
-          Clear application cache
+          Reset network settings
         </Button>
-        <Info>
-          This will only delete the data stored in your browser to make the app
-          load faster. No data related to the organization itself will be
-          altered.
-        </Info>
       </Box>
     </React.Fragment>
   )
@@ -126,7 +123,13 @@ const useNetwork = () => {
   const [ipfsGateway, setIpfsGatewayValue] = useState(defaultIpfsGateway)
   const networkType = getNetworkType()
 
+  const defaultsChanged =
+    ipfsGateway !== defaultIpfsGateway || ethNode !== defaultEthNode
+
   const handleNetworkChange = useCallback(async () => {
+    if (!defaultsChanged) {
+      return
+    }
     try {
       await checkValidEthNode(ethNode)
     } catch (err) {
@@ -136,35 +139,21 @@ const useNetwork = () => {
     setDefaultEthNode(ethNode)
     setIpfsGateway(ipfsGateway)
     window.location.reload()
-  }, [ethNode, ipfsGateway])
+  }, [ethNode, ipfsGateway, defaultsChanged])
 
-  const handleClearCache = useCallback(() => {
-    window.localStorage.clear()
+  const handleClearNetworkSettings = useCallback(() => {
+    clearLocalStorageNetworkSettings()
+    window.location.reload()
   }, [])
 
-  const handleKeyPress = useCallback(
-    ({ keyCode }) => {
-      if (
-        keyCode === keycodes.enter &&
-        (ipfsGateway !== defaultIpfsGateway || ethNode !== defaultEthNode)
-      ) {
-        handleNetworkChange()
-      }
-    },
-    [handleNetworkChange, ethNode, ipfsGateway]
-  )
-
-  useEffect(() => {
-    window.addEventListener('keypress', handleKeyPress)
-    return () => window.removeEventListener('keypress', handleKeyPress)
-  }, [handleKeyPress])
+  useEnterKey(handleNetworkChange)
 
   return {
     ethNode,
     networkType,
     ipfsGateway,
     handleNetworkChange,
-    handleClearCache,
+    handleClearNetworkSettings,
     networkError,
     handleEthNodeChange: ({ currentTarget: { value } }) =>
       setEthNodeValue(value),
